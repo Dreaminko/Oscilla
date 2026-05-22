@@ -1,4 +1,5 @@
-<img width="1280" height="720" alt="Screenshot 2026-05-22 222340" src="https://github.com/user-attachments/assets/0e479574-39c2-490a-ba16-2ad7f9d183ba" />
+<img width="1280" height="295" alt="Screenshot 2026-05-22 222340" src="https://github.com/user-attachments/assets/970a3d3d-ba3b-40bb-8806-822ddaefd761" />
+
 # Oscilla
 local music player-Try avoid making trash
 
