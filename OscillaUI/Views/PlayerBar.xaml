@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="OscillaUI.Views.PlayerBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border BorderThickness="1" MinHeight="60" Background="#181818" CornerRadius="4" Padding="15,5">
+        <Border.BorderBrush>
+            <SolidColorBrush x:Name="AnimatedBrush" Color="#252525"/>
+        </Border.BorderBrush>
+        <Border.Style>
+            <Style TargetType="Border">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#00FFCC" Duration="0:0:0.4"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                        <DataTrigger.ExitActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#252525" Duration="0:0:0.4"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.ExitActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="15"/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding PlayerStatus}" FontSize="10" FontWeight="Bold" Margin="0,0,15,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#555555"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                    <Setter Property="Foreground" Value="#00FFCC"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style></TextBlock>
+                <TextBlock Text="{Binding SelectedTrack.DisplayName}" Foreground="#AAAAAA" FontSize="12"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding TimeDisplay}" Foreground="#888" FontFamily="Consolas" Margin="0,0,20,0"/>
+                <Button Content="{Binding LoopModeText}" Command="{Binding ToggleLoopModeCommand}" Background="Transparent" BorderThickness="0" Foreground="#666" FontWeight="Bold" Width="40" Cursor="Hand"/>
+                <Button Content="⏮" Command="{Binding PrevTrackCommand}" Foreground="#888" Background="Transparent" BorderThickness="0" FontSize="18" Margin="5,0" Cursor="Hand"/>
+                <Button Content="⏭" Command="{Binding NextTrackCommand}" Foreground="#888" Background="Transparent" BorderThickness="0" FontSize="18" Margin="5,0" Cursor="Hand"/>
+                <Button Command="{Binding PlayPauseCommand}" Background="Transparent" BorderThickness="0" Foreground="#00FFCC" FontSize="18" Cursor="Hand">
+                    <Path Data="M 0,0 L 12,7 L 0,14 Z" Fill="#00FFCC" Stretch="Uniform" Width="15" Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}, ConverterParameter=Inverted}"/>
+                </Button>
+            </StackPanel>
+            <Slider Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding CurrentTime, Mode=TwoWay}" Maximum="{Binding TotalTime}" Background="#2A2A2A" Foreground="#00FFCC"/>
+        </Grid>
+    </Border>
+</UserControl>
