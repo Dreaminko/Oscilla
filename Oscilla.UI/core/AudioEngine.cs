@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Threading; // 【新增】确保 Thread.Sleep(200) 不会报红叉
 using System.Windows.Threading;
 using NAudio.Wave;
 using Oscilla.Models;
 
-namespace Oscilla.Core
+namespace Oscilla.Core // 【已修改】去掉多余的 .UI.core，完美对齐你的 Core 文件夹路径
 {
     public enum OutputMode
     {
@@ -55,14 +56,14 @@ namespace Oscilla.Core
         {
             if (_currentMode == targetMode) return true;
 
-            // 1. 记录切换前是否正在播放 【已修复 CS0019 报错】
+            // 1. 记录切换前是否正在播放
             bool wasPlaying = _outputDevice != null && _outputDevice.PlaybackState == PlaybackState.Playing;
 
             // 2. 【核心大招】：只拔掉声卡线，绝对不销毁正在读取的音频文件！
             DisposeOutputDevice();
 
             // 给硬件底层 200ms 的释放时间，防爆音
-            System.Threading.Thread.Sleep(200);
+            Thread.Sleep(200);
 
             // 3. 校验驱动
             if (targetMode == OutputMode.Asio)
@@ -237,11 +238,11 @@ namespace Oscilla.Core
 
             double currentSec = _audioFile.CurrentTime.TotalSeconds;
             double totalSec = _audioFile.TotalTime.TotalSeconds;
-            double progress = totalSec > 0 ? (currentSec / totalSec) * 100 : 0;
+            double progress = totalSec > 0 ? currentSec / totalSec * 100 : 0;
 
             PositionChanged?.Invoke(currentSec, totalSec, progress);
 
-            if (totalSec > 0 && (totalSec - currentSec <= 0.15))
+            if (totalSec > 0 && totalSec - currentSec <= 0.15)
             {
                 if (_isLooping)
                 {

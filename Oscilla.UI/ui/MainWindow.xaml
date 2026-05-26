@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Oscilla.UI"
-        Title="Oscilla" Icon="icon.ico" Height="720" Width="1280"
+        Title="Oscilla" Icon="pack://application:,,,/source/icon.ico" Height="720" Width="1280"
         Background="#000000" WindowStyle="None" AllowsTransparency="True" 
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
 
@@ -69,7 +69,7 @@
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="20,0,0,0">
                     <TextBlock Text="oscilla" Foreground="{StaticResource AuroraTextBrush}" FontSize="18" FontWeight="Bold" />
-                    <TextBlock Text="powered by BASS audio library" Foreground="#555555" FontSize="10" Margin="8,0,0,2" VerticalAlignment="Bottom" />
+                    <TextBlock Text="powered by Naudio" Foreground="#555555" FontSize="10" Margin="8,0,0,2" VerticalAlignment="Bottom" />
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

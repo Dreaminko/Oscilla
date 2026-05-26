@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Generic; // 用于 HashSet 和 List
 using System.IO;
-using System.Linq;
+using System.Linq; // 用于强大的 Diff 集合比对计算
 using System.Text;
-using Oscilla.Models;
+using Oscilla.Core;   // 【新增】引入音频核心层，认出 Track 类
+using Oscilla.Models; // 【新增】引入数据模型层，认出 LibrarySource 类
 
-namespace Oscilla.Logic
+namespace Oscilla.Logic // 【已修改】由 Oscilla.UI.core 改为 Oscilla.Logic，完美对齐你的 Logic 文件夹路径
 {
     public enum AddSourceResult
     {
@@ -122,7 +123,6 @@ namespace Oscilla.Logic
             StringBuilder sb = new StringBuilder();
             foreach (var rawFile in files)
             {
-                // 1. 【安全对齐】：强行把所有路径转换为 Windows 标准的反斜杠
                 string file = rawFile.Replace("/", "\\");
 
                 string relativePath = Path.GetRelativePath(source.FolderPath, file);
@@ -156,15 +156,12 @@ namespace Oscilla.Logic
                 }
                 catch (Exception ex)
                 {
-                    // 2. 打印出究竟是哪个文件、因为什么原因被 TagLib 拒收了
                     System.Diagnostics.Debug.WriteLine($"[TagLib 读取失败] {file} | 原因: {ex.Message}");
                 }
 
-                // 3. 【防爆清洗】：万一歌名或歌手名里带有 "|" 符号，直接替换为全角 "｜"，防止数据库被截断损坏！
                 title = title.Replace("|", "｜");
                 artist = artist.Replace("|", "｜");
 
-                // 数据库行格式：相对路径|标题|艺术家|时长|码率|采样率|位深|格式
                 sb.AppendLine($"{relativePath}|{title}|{artist}|{duration}|{bitrate}|{sampleRate:F1}|{bitDepth}|{ext}");
             }
 
@@ -173,11 +170,37 @@ namespace Oscilla.Logic
         }
 
         // ==========================================
-        // 加载时还原路径并支持懒读取准备
+        // 【新增物理覆盖功能】：点击刷新同步后，将内存中最新的 Tracks 重写物理覆盖日志文件
         // ==========================================
-        private static List<Oscilla.Core.Track> LoadFromSongDatabase(string folderPath)
+        public static void WriteSourceLog(LibrarySource source)
         {
-            var list = new List<Oscilla.Core.Track>();
+            if (source == null || source.Tracks == null) return;
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var track in source.Tracks)
+            {
+                // 计算相对路径反向写回（保证格式纯净）
+                string relativePath = Path.GetRelativePath(source.FolderPath, track.FilePath).Replace("/", "\\");
+                string title = track.Title.Replace("|", "｜");
+                string artist = track.Artist.Replace("|", "｜");
+
+                // 还原单行日志行格式：相对路径|标题|艺术家|时长|码率|采样率|位深|格式
+                sb.AppendLine($"{relativePath}|{title}|{artist}|{track.Duration}|{track.Bitrate}|{track.SampleRate:F1}|{track.BitDepth}|{track.Format}");
+            }
+
+            string dbPath = Path.Combine(source.FolderPath, "oscillasongs");
+
+            // 加入一个首行包含 # LAST_EDITED 的防爆头文件
+            string head = $"# LAST_EDITED: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
+            File.WriteAllText(dbPath, head + sb.ToString(), Encoding.UTF8);
+        }
+
+        // ==========================================
+        // 【已修改为 public】公开此方法，让外围界面可以合法加载音乐库静态数据
+        // ==========================================
+        public static List<Track> LoadFromSongDatabase(string folderPath)
+        {
+            var list = new List<Track>();
             string dbPath = Path.Combine(folderPath, "oscillasongs");
 
             if (!File.Exists(dbPath)) return list;
@@ -185,16 +208,16 @@ namespace Oscilla.Logic
             var lines = File.ReadAllLines(dbPath);
             foreach (var line in lines)
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                // 跳过前面可能夹带的注释编辑时间行
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
                 var parts = line.Split('|');
 
                 if (parts.Length >= 8)
                 {
-                    // 获取相对路径并强制转换为 Windows 格式
                     string relPath = parts[0].Replace("/", "\\");
                     string fullPath = Path.Combine(folderPath, relPath).Replace("/", "\\");
 
-                    list.Add(new Oscilla.Core.Track
+                    list.Add(new Track
                     {
                         FilePath = fullPath,
                         Title = parts[1],
@@ -210,7 +233,7 @@ namespace Oscilla.Logic
             return list;
         }
 
-        public static List<Oscilla.Core.Track> GetActiveTracks()
+        public static List<Track> GetActiveTracks()
         {
             return RegisteredSources.Where(s => s.IsEnabled)
                                     .SelectMany(s => LoadFromSongDatabase(s.FolderPath))

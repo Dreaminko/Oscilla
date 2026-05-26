@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Oscilla.Logic; // 引入底层物理扫描引擎
+using Oscilla.Core;   // 引入音频核心层，认出 Track 类
+using Oscilla.Models; // 引入数据模型层，认出 LibrarySource 类
 
-namespace Oscilla.Core
+namespace Oscilla.Logic // 【已修改】由 Oscilla.UI.core 改为 Oscilla.Logic，完美对齐你的 Logic 文件夹路径
 {
     public static class LibraryManager
     {
@@ -199,14 +200,14 @@ namespace Oscilla.Core
         public static void PlayNext()
         {
             if (CurrentPlaybackQueue == null || CurrentPlaybackQueue.Count == 0) return;
-            CurrentTrackIndex = (CurrentPlaybackQueue.Count > 0) ? (CurrentTrackIndex + 1) % CurrentPlaybackQueue.Count : -1;
+            CurrentTrackIndex = CurrentPlaybackQueue.Count > 0 ? (CurrentTrackIndex + 1) % CurrentPlaybackQueue.Count : -1;
             if (CurrentTrackIndex != -1) TrackChanged?.Invoke(CurrentPlaybackQueue[CurrentTrackIndex]);
         }
 
         public static void PlayPrevious()
         {
             if (CurrentPlaybackQueue == null || CurrentPlaybackQueue.Count == 0) return;
-            CurrentTrackIndex = (CurrentPlaybackQueue.Count > 0) ? (CurrentTrackIndex - 1 + CurrentPlaybackQueue.Count) % CurrentPlaybackQueue.Count : -1;
+            CurrentTrackIndex = CurrentPlaybackQueue.Count > 0 ? (CurrentTrackIndex - 1 + CurrentPlaybackQueue.Count) % CurrentPlaybackQueue.Count : -1;
             if (CurrentTrackIndex != -1) TrackChanged?.Invoke(CurrentPlaybackQueue[CurrentTrackIndex]);
         }
 

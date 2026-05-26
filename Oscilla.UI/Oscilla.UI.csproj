@@ -12,7 +12,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="icon.ico" />
+	  <None Remove="source\icon.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -22,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Resource Include="icon.ico" />
+	  <Resource Include="source\icon.ico" />
 	</ItemGroup>
 
 </Project>

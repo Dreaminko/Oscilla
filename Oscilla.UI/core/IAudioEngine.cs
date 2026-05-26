@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Oscilla.Core
+namespace Oscilla.UI.core
 {
     public interface IAudioEngine : IDisposable
     {

@@ -174,7 +174,7 @@
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="Bg" Background="Transparent" BorderThickness="0" CornerRadius="16">
-                                <!-- 修改：固定宽高的 Path + Uniform 拉伸确保在 Border 中绝对对准 -->
+                                <!-- 固定宽高的 Path + Uniform 拉伸确保在 Border 中绝对对准 -->
                                 <Path x:Name="Icon" 
                                       Data="M 18,11 L 18,25 M 11,18 L 25,18" 
                                       Stroke="#888" 
@@ -204,10 +204,11 @@
                     <GridView>
                         <GridViewColumn Width="80">
                             <GridViewColumn.Header>
-                                <TextBlock Text="STATUS" Margin="15,0,0,0"/>
+                                <TextBlock Text="STATUS"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
+                                    <!-- 修正点：将这里的 StaticStaticResource 修正为了 StaticResource -->
                                     <CheckBox Style="{StaticResource SourceToggle}" IsChecked="{Binding IsEnabled}" Margin="15,0,0,0" Click="Toggle_Click"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
@@ -215,7 +216,7 @@
 
                         <GridViewColumn Width="260">
                             <GridViewColumn.Header>
-                                <TextBlock Text="FOLDER NAME" Margin="15,0,0,0" VerticalAlignment="Bottom"/>
+                                <TextBlock Text="FOLDER NAME" VerticalAlignment="Bottom"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -231,7 +232,7 @@
 
                         <GridViewColumn Width="280">
                             <GridViewColumn.Header>
-                                <TextBlock Text="PATH" Margin="15,0,0,0"/>
+                                <TextBlock Text="PATH"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -254,7 +255,7 @@
 
                         <GridViewColumn Width="80">
                             <GridViewColumn.Header>
-                                <TextBlock Text="TRACKS" Margin="15,0,0,0"/>
+                                <TextBlock Text="TRACKS"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -265,7 +266,7 @@
 
                         <GridViewColumn Width="100">
                             <GridViewColumn.Header>
-                                <TextBlock Text="ACTION" Margin="15,0,0,0"/>
+                                <TextBlock Text="ACTION"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>

@@ -3,6 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 
+// =================================================================
+// 【核心同步】：将命名空间强行归位到 Oscilla.UI，完美对接前端 x:Class
+// =================================================================
 namespace Oscilla.UI
 {
     public partial class Start : UserControl

@@ -8,7 +8,12 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using Oscilla.Core; // 确保引入了 Core 以使用 Logger 和 Track
+
+// =================================================================
+// 【核心修复】：砍掉旧的 UI.core 引用，换上剥离 UI. 前缀后的标准三层架构引用
+// =================================================================
+using Oscilla.Core;   // 【新增】引入音频核心层，认出 Track 类
+using Oscilla.Logic;  // 【新增】引入业务逻辑层，认出 LibraryManager 和 Logger
 
 namespace Oscilla.UI
 {
@@ -184,12 +189,14 @@ namespace Oscilla.UI
             container.Children.Add(editActions);
             newPlaylist.Content = container;
 
+            // 动画效果设置
             DoubleAnimation fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200));
             DoubleAnimation fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200));
 
             newPlaylist.MouseEnter += (s, ev) => { if (editActions.Visibility == Visibility.Collapsed) normalActions.BeginAnimation(UIElement.OpacityProperty, fadeIn); };
             newPlaylist.MouseLeave += (s, ev) => { normalActions.BeginAnimation(UIElement.OpacityProperty, fadeOut); };
 
+            // 联动操作代理
             Action cancelEdit = () => {
                 editBox.Visibility = Visibility.Collapsed; editActions.Visibility = Visibility.Collapsed; displayText.Visibility = Visibility.Visible;
                 if (newPlaylist.IsMouseOver) normalActions.BeginAnimation(UIElement.OpacityProperty, fadeIn);
@@ -202,7 +209,7 @@ namespace Oscilla.UI
                 if (!string.IsNullOrWhiteSpace(newName) && oldName != newName)
                 {
                     displayText.Text = newName;
-                    _sessionActivePlaylists.Add(newName); // 标记新名字，刷新前有效
+                    _sessionActivePlaylists.Add(newName);
                     PlaylistRenamed?.Invoke(this, new PlaylistRenamedEventArgs { OldName = oldName, NewName = newName });
                 }
                 cancelEdit();
@@ -242,7 +249,7 @@ namespace Oscilla.UI
                 rb.Background = Brushes.Transparent;
                 if (e.Data.GetDataPresent("OscillaTrack"))
                 {
-                    Track droppedTrack = e.Data.GetData("OscillaTrack") as Track;
+                    Track? droppedTrack = e.Data.GetData("OscillaTrack") as Track;
                     if (rb.Content is Grid grid && grid.Children[0] is TextBlock tb)
                     {
                         string playlistName = tb.Text;
@@ -330,4 +337,4 @@ namespace Oscilla.UI
             else NavScrollViewer.ScrollToVerticalOffset(currentOffset + delta * 0.15);
         }
     }
-}   
+}

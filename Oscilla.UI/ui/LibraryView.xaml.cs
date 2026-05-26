@@ -7,9 +7,14 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using Oscilla.Core;
 
-namespace Oscilla.UI
+// =================================================================
+// 【核心修复】：砍掉旧的 UI.core 引用，换上剥离 UI. 前缀后的标准三层架构引用
+// =================================================================
+using Oscilla.Core;   // 【新增】引入音频核心层，认出 Track 类
+using Oscilla.Logic;  // 【新增】引入业务逻辑层，认出 LibraryManager 和 Logger
+
+namespace Oscilla.UI // 保持干净的 UI 命名空间，完美匹配你的物理文件夹
 {
     public partial class LibraryView : UserControl
     {
@@ -28,6 +33,11 @@ namespace Oscilla.UI
         private int _filterToken = 0;
         private Track? _pendingDeleteTrack;
 
+        // 用于标识数据是否已加载
+        private bool _dataLoaded = false;
+        // 用于存储在数据加载前收到的高亮请求
+        private Track? _pendingTrackToHighlight = null;
+
         private Point _dragStartPoint;
         private bool _isDragging = false;
 
@@ -45,6 +55,42 @@ namespace Oscilla.UI
             {
                 LibraryManager.TrackChanged -= OnGlobalTrackChanged;
             };
+        }
+
+        // ==========================================
+        // 【核心联动】：供 MainWindow 调用，滚动到指定曲目并高亮
+        // ==========================================
+        public void ScrollToAndHighlightTrack(Track track)
+        {
+            if (track == null) return;
+
+            // 如果数据还没加载完，先缓存起来，等加载完再执行
+            if (!_dataLoaded)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LibraryView] Data not loaded yet, pending highlight for: {track.Title}");
+                _pendingTrackToHighlight = track;
+                return;
+            }
+
+            // 数据已加载，执行查找和高亮逻辑
+            var currentList = TrackListView.ItemsSource as List<Track>;
+            if (currentList != null && currentList.Contains(track))
+            {
+                // 选中这首歌
+                TrackListView.SelectedItem = track;
+
+                // 滚动到这首歌的位置
+                TrackListView.ScrollIntoView(track);
+
+                // 更新右侧面板显示这首歌的信息
+                UpdateRightPanel(track, "SELECTED");
+
+                System.Diagnostics.Debug.WriteLine($"[LibraryView] Highlighted and scrolled to: {track.Title}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[LibraryView] Could not find track '{track.Title}' in current list for playlist '{_currentLoadedPlaylist}'. Available tracks: {currentList?.Count ?? 0}");
+            }
         }
 
         private void OnGlobalTrackChanged(Track newTrack)
@@ -72,6 +118,12 @@ namespace Oscilla.UI
             _currentLoadedPlaylist = playlistName;
             IsCustomPlaylist = (!string.Equals(playlistName, "All Songs", StringComparison.OrdinalIgnoreCase));
             _originalTracks = tracks;
+
+            // 标记数据加载完成前，清空旧数据
+            TrackListView.ItemsSource = null;
+            // 标记数据尚未加载
+            _dataLoaded = false;
+            // 触发 ApplyFilters，它会异步加载数据
             PlayRefreshAnimation();
         }
 
@@ -85,6 +137,25 @@ namespace Oscilla.UI
         {
             SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
             ApplyFilters();
+        }
+
+        // ==========================================
+        // 【新增】：点击歌手名字自动复制到搜索栏过滤
+        // ==========================================
+        private void ArtistText_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBlock textBlock && !string.IsNullOrWhiteSpace(textBlock.Text))
+            {
+                // 1. 拦截点击事件，防止它触发 ListView 本身的选中或双击操作
+                e.Handled = true;
+
+                // 2. 将歌手名字直接丢进搜索框 (这会自动触发 SearchBox_TextChanged 逻辑)
+                SearchBox.Text = textBlock.Text;
+
+                // 3. 把输入光标焦点切到搜索框，并将光标移到文字末尾，方便继续输入
+                SearchBox.Focus();
+                SearchBox.CaretIndex = SearchBox.Text.Length;
+            }
         }
 
         private void Filter_Changed(object sender, RoutedEventArgs e) => ApplyFilters();
@@ -129,7 +200,7 @@ namespace Oscilla.UI
             var toAdd = finalList.Except(currentList).ToList();
 
             // ----------------------------------------------------
-            // 阶段 A：不要的积木向右撤离 + 高度塌陷
+            // 阶段 A：不要的项向右撤离 + 高度塌陷
             // ----------------------------------------------------
             int exitCounter = 0;
             int maxExitDelay = 0;
@@ -175,8 +246,19 @@ namespace Oscilla.UI
 
             if (currentToken != _filterToken) return;
 
+            // 标记数据加载完成
+            _dataLoaded = true;
+
+            // 检查是否有等待高亮的歌曲，如果有则执行
+            if (_pendingTrackToHighlight != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LibraryView] Processing pending highlight for: {_pendingTrackToHighlight.Title}");
+                ScrollToAndHighlightTrack(_pendingTrackToHighlight);
+                _pendingTrackToHighlight = null; // 清除等待项
+            }
+
             // ----------------------------------------------------
-            // 阶段 C：【加法动画回归】让新项瀑布般滑入
+            // 阶段 C：让新项瀑布般滑入
             // ----------------------------------------------------
             int entryCounter = 0;
             foreach (var track in finalList)
@@ -188,18 +270,15 @@ namespace Oscilla.UI
                     // 如果是新加回来的项，触发进场动画
                     if (toAdd.Contains(track))
                     {
-                        // 初始状态：透明且稍微偏左
                         container.Opacity = 0;
                         if (!(container.RenderTransform is TranslateTransform))
                             container.RenderTransform = new TranslateTransform(-30, 0);
                         else
                             ((TranslateTransform)container.RenderTransform).X = -30;
 
-                        // 不动高度！仅通过透明度和平移做动画
                         AnimateBlockEntry(container, entryCounter * 20);
                         entryCounter++;
 
-                        // 防止一瞬间生成太多动画导致卡顿
                         if (entryCounter >= 25) break;
                     }
                 }
@@ -215,44 +294,53 @@ namespace Oscilla.UI
             container.BeginAnimation(UIElement.OpacityProperty, null);
 
             if (container.RenderTransform is TranslateTransform tt)
-                tt.BeginAnimation(TranslateTransform.XProperty, null);
-
-            container.RenderTransform = new TranslateTransform(0, 0);
+            {
+                if (!tt.IsFrozen)
+                {
+                    tt.BeginAnimation(TranslateTransform.XProperty, null);
+                }
+                container.RenderTransform = new TranslateTransform(0, 0);
+            }
+            else
+            {
+                container.RenderTransform = new TranslateTransform(0, 0);
+            }
 
             container.ClearValue(FrameworkElement.HeightProperty);
             container.ClearValue(FrameworkElement.MinHeightProperty);
             container.ClearValue(UIElement.OpacityProperty);
 
-            // 强制锁定基准行高，保证布局死锁绝不发生
+            // 强制锁定基准行高
             container.MinHeight = 46;
             container.Height = 46;
             container.Opacity = 1;
         }
 
-        // ==========================================
-        // 【重新引入】：安全的进场动画 (瀑布流滑入)
-        // ==========================================
         private void AnimateBlockEntry(ListViewItem item, int delay)
         {
             var easeOut = new QuarticEase { EasingMode = EasingMode.EaseOut };
 
-            // 1. 从左侧滑入原位
+            // 从左侧滑入原位
             var slideIn = new DoubleAnimation(-30, 0, TimeSpan.FromMilliseconds(300))
             {
                 BeginTime = TimeSpan.FromMilliseconds(delay),
                 EasingFunction = easeOut
             };
 
-            // 2. 透明度淡入
+            // 透明度淡入
             var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250))
             {
                 BeginTime = TimeSpan.FromMilliseconds(delay),
                 EasingFunction = easeOut
             };
 
+            if (item.RenderTransform is TranslateTransform tt && tt.IsFrozen)
+            {
+                item.RenderTransform = new TranslateTransform(tt.X, tt.Y);
+            }
+
             item.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
             item.BeginAnimation(UIElement.OpacityProperty, fade);
-            // 绝对不要在这里加 FrameworkElement.HeightProperty 动画，否则会闪瞎眼
         }
 
         private void AnimateBlockExit(ListViewItem item, int delay)
@@ -277,6 +365,10 @@ namespace Oscilla.UI
             };
 
             if (!(item.RenderTransform is TranslateTransform))
+            {
+                item.RenderTransform = new TranslateTransform(0, 0);
+            }
+            else if (((TranslateTransform)item.RenderTransform).IsFrozen)
             {
                 item.RenderTransform = new TranslateTransform(0, 0);
             }

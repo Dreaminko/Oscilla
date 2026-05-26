@@ -1,7 +1,7 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace Oscilla.UI
+namespace Oscilla.UI.core
 {
     public class OscillaAudioEngine : IDisposable
     {

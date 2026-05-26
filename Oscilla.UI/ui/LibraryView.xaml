@@ -279,7 +279,7 @@
                     <GridView>
                         <GridViewColumn Width="60">
                             <GridViewColumn.Header>
-                                <TextBlock Text="TYPE" Margin="15,0,0,0"/>
+                                <TextBlock Text="TYPE"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -290,7 +290,7 @@
 
                         <GridViewColumn Width="260">
                             <GridViewColumn.Header>
-                                <TextBlock Text="TITLE" Margin="15,0,0,0"/>
+                                <TextBlock Text="TITLE"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -298,19 +298,34 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
+                        <!-- 这里是修改过的支持点击和变色的 ARTIST 列 -->
                         <GridViewColumn Width="180">
                             <GridViewColumn.Header>
-                                <TextBlock Text="ARTIST" Margin="15,0,0,0"/>
+                                <TextBlock Text="ARTIST"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Artist}" VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                    <TextBlock Text="{Binding Artist}" VerticalAlignment="Center" Margin="15,0,0,0" 
+                                               Cursor="Hand" MouseLeftButtonUp="ArtistText_MouseLeftButtonUp" Background="Transparent">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Foreground" Value="#00FFAB"/>
+                                                        <Setter Property="TextDecorations" Value="Underline"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
                         <GridViewColumn Width="80">
                             <GridViewColumn.Header>
-                                <TextBlock Text="TIME" Margin="15,0,0,0"/>
+                                <TextBlock Text="TIME"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -320,7 +335,7 @@
                         </GridViewColumn>
                         <GridViewColumn Width="150">
                             <GridViewColumn.Header>
-                                <TextBlock Text="FORMAT" Margin="15,0,0,0"/>
+                                <TextBlock Text="FORMAT"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -329,59 +344,6 @@
                                         <Run Text=" / "/>
                                         <Run Text="{Binding BitDepth, StringFormat={}{0}bit}"/>
                                     </TextBlock>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <!-- 优雅淡入淡出的悬浮垃圾桶 -->
-                        <GridViewColumn Width="80">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="ACTION" Margin="15,0,0,0"/>
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="15,0,0,0" Background="Transparent" 
-                                                Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListView}, Path=Tag, Converter={StaticResource BoolToVis}}">
-                                        <StackPanel.Style>
-                                            <Style TargetType="StackPanel">
-                                                <Setter Property="Opacity" Value="0"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=IsMouseOver}" Value="True">
-                                                        <DataTrigger.EnterActions>
-                                                            <BeginStoryboard>
-                                                                <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </DataTrigger.EnterActions>
-                                                        <DataTrigger.ExitActions>
-                                                            <BeginStoryboard>
-                                                                <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3"/>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </DataTrigger.ExitActions>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
-
-                                        <Button Style="{StaticResource ActionIconBtn}" Click="RemoveFromPlaylist_Click" ToolTip="Remove from Playlist">
-                                            <Path Data="M 4,4 L 12,4 M 5,4 L 5,13 L 11,13 L 11,4 M 6.5,2 L 9.5,2 L 9.5,4 L 6.5,4 Z M 7,6 L 7,11 M 9,6 L 9,11"
-                                                  StrokeThickness="1.5" Stretch="Uniform" Width="12" Height="12" Fill="Transparent">
-                                                <Path.Style>
-                                                    <Style TargetType="Path">
-                                                        <Setter Property="Stroke" Value="#666666"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=IsMouseOver}" Value="True">
-                                                                <Setter Property="Stroke" Value="#FF4A4A"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Path.Style>
-                                            </Path>
-                                        </Button>
-                                    </StackPanel>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
