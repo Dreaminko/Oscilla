@@ -44,6 +44,7 @@ namespace Oscilla.UI
         public event EventHandler<PlaylistDeleteEventArgs>? PlaylistDeleteRequested;
 
         private int _playlistCount = 1;
+        private int _playlistTagCount = 1;
         private double _targetVerticalOffset = 0;
         private bool _isScrolling = false;
         private Action? _cancelCurrentEdit;
@@ -138,6 +139,8 @@ namespace Oscilla.UI
             {
                 PlaylistsContainer.Children.Remove(rb);
             }
+
+            RefreshPlaylistCounter();
         }
 
         public void AddPlaylistExternally(string name, string? tag = null)
@@ -145,7 +148,7 @@ namespace Oscilla.UI
             RadioButton newPlaylist = new RadioButton
             {
                 Style = (Style)FindResource("NavButtonStyle"),
-                Tag = tag ?? "Playlist_" + _playlistCount,
+                Tag = tag ?? "Playlist_" + _playlistTagCount,
                 GroupName = "MainNav",
                 Opacity = 0,
                 RenderTransform = new TranslateTransform(-8, 0)
@@ -197,13 +200,15 @@ namespace Oscilla.UI
             newPlaylist.MouseLeave += (s, ev) => { normalActions.BeginAnimation(UIElement.OpacityProperty, fadeOut); };
 
             // 联动操作代理
-            Action cancelEdit = () => {
+            Action cancelEdit = () =>
+            {
                 editBox.Visibility = Visibility.Collapsed; editActions.Visibility = Visibility.Collapsed; displayText.Visibility = Visibility.Visible;
                 if (newPlaylist.IsMouseOver) normalActions.BeginAnimation(UIElement.OpacityProperty, fadeIn);
                 _cancelCurrentEdit = null;
             };
 
-            Action commitEdit = () => {
+            Action commitEdit = () =>
+            {
                 string oldName = displayText.Text;
                 string newName = editBox.Text.Trim();
                 if (!string.IsNullOrWhiteSpace(newName) && oldName != newName)
@@ -215,7 +220,8 @@ namespace Oscilla.UI
                 cancelEdit();
             };
 
-            editBtn.Click += (s, ev) => {
+            editBtn.Click += (s, ev) =>
+            {
                 _cancelCurrentEdit?.Invoke(); _cancelCurrentEdit = cancelEdit;
                 displayText.Visibility = Visibility.Collapsed; normalActions.Opacity = 0;
                 editBox.Visibility = Visibility.Visible; editActions.Visibility = Visibility.Visible;
@@ -235,7 +241,8 @@ namespace Oscilla.UI
             newPlaylist.Drop += PlaylistButton_Drop;
 
             PlaylistsContainer.Children.Add(newPlaylist);
-            _playlistCount++;
+            _playlistTagCount++;
+            RefreshPlaylistCounter();
 
             var slideIn = new DoubleAnimation(0, TimeSpan.FromMilliseconds(400)) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
             newPlaylist.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
@@ -277,7 +284,36 @@ namespace Oscilla.UI
             return names;
         }
 
-        public void RemovePlaylist(RadioButton playlist) { PlaylistsContainer.Children.Remove(playlist); }
+        public void RemovePlaylist(RadioButton playlist)
+        {
+            string? playlistName = GetPlaylistName(playlist);
+            if (!string.IsNullOrEmpty(playlistName))
+            {
+                _sessionActivePlaylists.Remove(playlistName);
+            }
+
+            PlaylistsContainer.Children.Remove(playlist);
+            RefreshPlaylistCounter();
+        }
+
+        private string? GetPlaylistName(RadioButton playlist)
+        {
+            if (playlist.Content is Grid grid && grid.Children.Count > 0 && grid.Children[0] is TextBlock tb)
+                return tb.Text;
+
+            return null;
+        }
+
+        private void RefreshPlaylistCounter()
+        {
+            var existingNames = new HashSet<string>(GetAllPlaylistNames(), StringComparer.OrdinalIgnoreCase);
+            _playlistCount = 1;
+
+            while (existingNames.Contains("New Playlist " + _playlistCount))
+            {
+                _playlistCount++;
+            }
+        }
 
         private void NavButton_Checked(object sender, RoutedEventArgs e)
         {
